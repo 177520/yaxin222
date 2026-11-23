@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>「网页打不开」这四个字，掩盖了四种完全不同的故障</title>
+<meta name="description" content="打不开不是一种故障，是四种。转圈超时、秒失败、页面不对、证书警告，四种现象对应四种完全不同的原因和处理方式。附三步排查法与验证码死线。">
+<meta name="author" content="网站访问排查笔记">
+<meta name="robots" content="index,follow">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+line-height:1.85;color:#24292f;background:#fff;font-size:16px}
+.wrap{max-width:760px;margin:0 auto;padding:40px 22px 80px}
+h1{font-size:26px;line-height:1.45;margin-bottom:18px;letter-spacing:-.2px}
+h2{font-size:19px;margin:36px 0 12px;padding-left:11px;border-left:3px solid #d0d7de}
+h3{font-size:16px;margin:24px 0 10px}
+p{margin:0 0 15px}
+strong{font-weight:600}
+code{background:#f6f8fa;padding:2px 6px;border-radius:4px;font-size:14px;
+font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+ul{margin:0 0 15px 22px}
+li{margin-bottom:7px}
+blockquote{border-left:3px solid #d0d7de;padding:2px 0 2px 14px;color:#57606a;margin:0 0 15px}
+hr{border:0;border-top:1px solid #d8dee4;margin:32px 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+.foot{margin-top:44px;padding-top:20px;border-top:1px solid #d8dee4;font-size:14px;color:#57606a}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>「网页打不开」这四个字，掩盖了四种完全不同的故障</h1>
+
+<p>先说结论：<strong>「打不开」不是一种故障，是四种。</strong>分不清是哪一种，你后面做的所有操作都是瞎试——包括重启路由器、清缓存、换浏览器，以及最常见的那个动作：跑去问客服。</p>
+
+<p>我最近帮人排查了一批这类问题，发现绝大多数人卡在第一步：不知道自己在对付哪一种。这篇把四种拆开写，每种给判断方法和对应动作。</p>
+
+<hr>
+
+<h2>第一种：转半天，最后超时</h2>
+
+<p>状态栏一直显示「正在等待响应」，转十几秒甚至更久，然后弹超时。</p>
+
+<p>这种是请求发出去了，但对面没在合理时间内返回。判断方法只有一个动作：<strong>把手机开热点给电脑，用流量再打开一次。</strong></p>
+
+<ul>
+<li>用流量能开 → 你家宽带、路由器或者运营商链路的问题，跟网站没关系</li>
+<li>用流量也打不开 → 换台设备再试，两台都不行才轮到考虑服务端</li>
+</ul>
+
+<p>这一步能解决掉大部分情况，而且不需要懂任何技术。我见过太多人跳过这步，直接去清缓存、改 DNS、换浏览器，折腾一小时，其实只是路由器跑了三个月没重启。</p>
+
+<h2>第二种：秒失败，立刻弹「无法访问此网站」</h2>
+
+<p>几乎没有任何等待过程，页面直接显示打不开。</p>
+
+<p>这是请求压根没出去，或者被你自己电脑上的东西拦住了。三个常见原因：</p>
+
+<ul>
+<li><strong>DNS 解析不出来</strong>。命令行敲 <code>nslookup 目标域名</code>，如果返回一片空白或者 NXDOMAIN，就是这个问题。</li>
+<li><strong>hosts 文件里有一条错误记录</strong>。hosts 的优先级高于 DNS，一条错误的记录能让某个域名永远解析到错地方。位置在 <code>C:\Windows\System32\drivers\etc\hosts</code>。</li>
+<li><strong>安全软件拦截</strong>。某些安全软件的网页防护会把不认识的域名直接掐掉。</li>
+</ul>
+
+<p>「只有我这台电脑打不开、手机能打开」这类问题，八成在第二项。</p>
+
+<h2>第三种：能打开，但页面不对</h2>
+
+<p>地址栏里是你输的地址，但页面长得不像你要去的地方，或者自己跳到别的网站去了。</p>
+
+<p>这种情况最危险，因为<strong>它不报错</strong>。</p>
+
+<p>地址栏自己变成别的域名，说明请求被中途改写了。这时候不要在新页面上输入任何东西，直接关掉，从地址栏重新输一遍完整地址。</p>
+
+<p>还有一种更隐蔽的：地址栏看起来是对的，但仔细看多了一个字母、少了一个点、或者结尾的 <code>.com</code> 变成了 <code>.con</code>。这类错误浏览器不会提示，会安安静静把你送到一个仿冒页面。</p>
+
+<p>我见过一个很典型的例子：有人要访问 <code>www.yaxin222.com</code>，结果地址栏里是 <code>wwwyaxin222.com</code>——<code>www</code> 和主体粘在一起少了那个点。页面做得很像，他就那么登进去了。后来才发现域名不对。</p>
+
+<p><strong>域名永远复制，不要凭记忆重敲。</strong>这是唯一有效的防法。</p>
+
+<h2>第四种：能打开，但提示证书不安全</h2>
+
+<p>浏览器地址栏出现红色警告，或者提示「您的连接不是私密连接」。</p>
+
+<p>点「高级」能看到具体原因，四种情况分别对应不同处理：</p>
+
+<ul>
+<li><code>ERR_CERT_DATE_INVALID</code> —— 证书过期，或你电脑时间不对。先校准系统时间。</li>
+<li><code>ERR_CERT_COMMON_NAME_INVALID</code> —— 证书域名与地址栏不一致。停止，核对正确地址。</li>
+<li><code>ERR_CERT_AUTHORITY_INVALID</code> —— 签发机构不被信任。正规站极少出现，警惕。</li>
+<li><code>ERR_CERT_REVOKED</code> —— 证书已被吊销。直接停。</li>
+</ul>
+
+<p>只有一种情况可以点「继续访问」：你明确知道这是自己的内网系统或测试环境，用的是自签名证书。除此之外，尤其是登录页、任何要输密码的地方，<strong>不要点</strong>——点下去之后你的密码在传输过程中对中间人是可见的。</p>
+
+<p>还有一个经常被忽略的场景：你在公共 WiFi 下访问一个平时正常的站，突然弹证书警告。这不是网站的问题，是同网络里有人在拦截流量。换用自己的流量再试，如果警告消失，就说明刚才那个网络有问题。</p>
+
+<hr>
+
+<h2>三步排查法，顺序不要乱</h2>
+
+<p>不用逐个现象对号入座，按下面三步走更快：</p>
+
+<ul>
+<li><strong>换网络</strong>（手机热点）</li>
+<li><strong>换浏览器</strong>（无痕窗口，不加载扩展、不用缓存）</li>
+<li><strong>换设备</strong>（手机浏览器）</li>
+</ul>
+
+<p>哪一步恢复正常，问题就锁定在被换掉的那一环。三步全部异常，才需要考虑服务端，这时把错误码、发生时间、截图一起留下来。</p>
+
+<p>反过来先怀疑网站、先去问客服，通常是最慢的路。</p>
+
+<h2>一条死线：验证码</h2>
+
+<p>最后说一个跟「打不开」无关但更重要的东西。</p>
+
+<p>任何以客服、技术、风控名义索要短信验证码的行为，都不成立。</p>
+
+<p>验证码不是身份证明，是<strong>一次性钥匙</strong>。系统发验证码的意思是「现在有人正在登录，如果他是主人，他手上应该有这条短信」。所以它只在一个地方有用——<strong>你正在操作的那个登录页面</strong>。</p>
+
+<p>把它念给别人，对方立刻就能完成登录，改绑定、改密码，整个过程可能不到两分钟。而这个套路听起来特别真，因为对方确实能说出你的账号后几位、注册时间，甚至最近一次登录——这些信息在某个小网站泄露过就够了。</p>
+
+<p>这条判断标准没有例外。</p>
+
+<hr>
+
+<h2>更完整的说明</h2>
+
+<p>我把这些按现象拆成了独立页面，每种现象对应一页，写清楚「看什么、怎么判断、下一步做什么」，包括各类错误码的具体处置、DNS 和本地缓存的排查顺序、仿冒站的识别要点。</p>
+
+<p>地址：<a href="https://www.yaxin222.company">https://www.yaxin222.company</a></p>
+
+<p>如果只是想让某个页面能打开，上面三步法足够；如果怀疑自己进过仿冒页，建议把证书和地址核对那两页看一遍再决定要不要改密码。</p>
+
+<div class="foot">
+<p>本文以 CC0 1.0 公有领域贡献方式发布，可自由转载、摘编，无需署名。</p>
+</div>
+
+</div>
+</body>
+</html>
